@@ -2,6 +2,18 @@
 name = "sign-file"
 version = "0.1.0"
 edition = "2021"
+authors = ["TommyLike <tommylikehu@gmail.com"]
+categories = ["ko", "signature"]
+description = """
+A CLI used to sign kernel module, alternative to sign file script of kernel.
+"""
+documentation = "https://github.com/TommyLike/sign-file/#readme"
+homepage = "https://github.com/TommyLike/sign-file"
+keywords = ["ko", "signature"]
+license = "GPL-3.0-or-later"
+readme = "README.md"
+repository = "https://github.com/TommyLike/sign-file"
+
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

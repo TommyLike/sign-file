@@ -21,7 +21,7 @@ struct ModuleSignature {
     signer_len: c_uchar, /* Length of signer's name [0] */
     key_id_len: c_uchar, /* Length of key identifier [0] */
     _pad: [c_uchar; 3],
-    sig_len: c_uint, /* Length of signature data */
+    sig_len: c_uint,     /* Length of signature data */
 }
 
 impl ModuleSignature {
@@ -108,7 +108,8 @@ fn sign(
         CMSOptions::DETACHED
             | CMSOptions::CMS_NOCERTS
             | CMSOptions::BINARY
-            | CMSOptions::NOSMIMECAP,
+            | CMSOptions::NOSMIMECAP
+            | CMSOptions::NOATTR
     )?;
     Ok(cms_signature)
 }
