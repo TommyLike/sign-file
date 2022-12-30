@@ -21,7 +21,7 @@ struct ModuleSignature {
     signer_len: c_uchar, /* Length of signer's name [0] */
     key_id_len: c_uchar, /* Length of key identifier [0] */
     _pad: [c_uchar; 3],
-    sig_len: c_uint,     /* Length of signature data */
+    sig_len: c_uint, /* Length of signature data */
 }
 
 impl ModuleSignature {
@@ -109,7 +109,7 @@ fn sign(
             | CMSOptions::CMS_NOCERTS
             | CMSOptions::BINARY
             | CMSOptions::NOSMIMECAP
-            | CMSOptions::NOATTR
+            | CMSOptions::NOATTR,
     )?;
     Ok(cms_signature)
 }
@@ -120,7 +120,7 @@ fn generate_detached_signature(module: &str, signature: &[u8]) -> Result<()> {
     Ok(())
 }
 
-fn create_inline_signature(module: &str, signature: &[u8]) -> Result<()> {
+fn append_inline_signature(module: &str, signature: &[u8]) -> Result<()> {
     let mut signed = fs::File::create(format!("{}.~signed~", module))?;
     signed.write_all(&fs::read(module)?)?;
     signed.write_all(signature)?;
@@ -145,7 +145,7 @@ fn main() -> Result<()> {
             let module = fs::read(&produce_command.module)?;
             let cms = sign(&private_key, &cert, &module)?.to_der()?;
             generate_detached_signature(produce_command.module.as_str(), &cms)?;
-            create_inline_signature(produce_command.module.as_str(), &cms)?;
+            append_inline_signature(produce_command.module.as_str(), &cms)?;
         }
         Some(Commands::Detach(detach_command)) => {
             let private_key = fs::read(detach_command.key)?;
@@ -156,11 +156,52 @@ fn main() -> Result<()> {
         }
         Some(Commands::Raw(raw_command)) => {
             let raw_sig = fs::read(&raw_command.raw)?;
-            create_inline_signature(raw_command.module.as_str(), &raw_sig)?;
+            append_inline_signature(raw_command.module.as_str(), &raw_sig)?;
         }
         None => {
             eprintln!("invalid command, use --help for detail")
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::NamedTempFile;
+
+    #[test]
+    fn test_append_inline_signature_struct_correct() {
+        let module_file = NamedTempFile::new().unwrap();
+        let fake_signature = "fake_signature";
+        let mut expected_content = vec![];
+        expected_content.extend_from_slice(fake_signature.as_bytes());
+        expected_content.extend_from_slice(&vec![
+            //see 'ModuleSignature' to check structure
+            0,
+            0,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            fake_signature.len() as u8,
+        ]);
+        expected_content.extend_from_slice(MAGIC_NUMBER.as_bytes());
+
+        append_inline_signature(
+            module_file.path().to_str().unwrap(),
+            fake_signature.as_bytes(),
+        )
+        .unwrap();
+
+        let mut signed_content = vec![];
+        let mut signed_file = fs::File::open(module_file.path().to_str().unwrap()).unwrap();
+        signed_file.read_to_end(&mut signed_content).unwrap();
+        assert_eq!(signed_content, expected_content);
+    }
 }

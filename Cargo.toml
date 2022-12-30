@@ -23,3 +23,6 @@ openssl = "0.10.45"
 base64 = "0.20.0"
 anyhow = "1.0.68"
 bincode = "2.0.0-rc.2"
+
+[dev-dependencies]
+tempfile = "3.3.0"
